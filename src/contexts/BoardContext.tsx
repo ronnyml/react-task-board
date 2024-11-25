@@ -16,11 +16,17 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   });
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
   const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     socket = io('http://localhost:3000', { transports: ['websocket', 'polling'] });
-
-    socket.emit('new-user');
+    socket.on('connect', () => {
+      if (socket && socket.id) {
+        const shortId = socket.id.slice(0, 5);
+        setCurrentUserId(shortId);
+        socket.emit('new-user');
+      }
+    });
 
     socket.on('tasks-update', (updatedTasks: TasksState) => {
       setTasks(updatedTasks);
@@ -60,7 +66,7 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   return (
-    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingTask, startEditingTask }}>
+    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingTask, startEditingTask, currentUserId }}>
       {children}
     </BoardContext.Provider>
   );

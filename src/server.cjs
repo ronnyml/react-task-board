@@ -20,10 +20,11 @@ let tasks = {
 let connectedUsers = [];
 
 io.on('connection', (socket) => {
-  connectedUsers.push(socket.id);
+  const shortId = socket.id.slice(0, 5);
+  connectedUsers.push(shortId);
   io.emit('user-joined', connectedUsers);
 
-  console.log('a user connected: ' + socket.id);
+  console.log('a user connected: ' + shortId);
   socket.emit('tasks-update', tasks);
 
   socket.on('tasks-update', (updatedTasks) => {
@@ -32,9 +33,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    connectedUsers = connectedUsers.filter((id) => id !== socket.id);
+    connectedUsers = connectedUsers.filter((id) => id !== shortId);
     io.emit('user-left', connectedUsers);
-    console.log('user disconnected: ' + socket.id);
+    console.log('user disconnected: ' + shortId);
   });
 });
 

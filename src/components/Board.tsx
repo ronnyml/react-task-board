@@ -4,7 +4,7 @@ import { useState } from 'react';
 import useBoard from '../hooks/useBoard';
 
 const Board = () => {
-  const { tasks, updateTasks, connectedUsers } = useBoard();
+  const { tasks, updateTasks, connectedUsers, currentUserId } = useBoard();
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   const handleDragEnd = (result: DropResult) => {
@@ -29,7 +29,7 @@ const Board = () => {
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <div className="flex justify-start mb-4">
         <input
           type="text"
@@ -45,16 +45,23 @@ const Board = () => {
           Add Task
         </button>
       </div>
-      <div className="mb-4">
-        <strong>Connected Users:</strong> {connectedUsers.join(', ')}
-      </div>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mb-8">
           <Column key="todo" title="To Do" droppableId="todo" />
           <Column key="in-progress" title="In Progress" droppableId="in-progress" />
           <Column key="done" title="Done" droppableId="done" />
         </div>
       </DragDropContext>
+      <div className="mt-auto p-4 bg-gray-100 rounded-xl w-full max-w-xs">
+        <strong>Connected Users:</strong>
+        <ul className="list-disc ml-4 mt-2">
+          {connectedUsers.map((user) => (
+            <li key={user}>
+              {user} {user === currentUserId ? '(you)' : ''}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

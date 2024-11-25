@@ -6,4 +6,5 @@ export interface BoardContextProps {
   connectedUsers: string[];
   editingTask: string | null;
   startEditingTask: (taskId: string) => void;
+  currentUserId: string | null;
 }
