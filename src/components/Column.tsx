@@ -19,7 +19,7 @@ const Column = ({ title, droppableId }: ColumnProps) => {
             <div
               key={task.id}
               onMouseEnter={() => startEditingTask(task.id)}
-              className={editingTask === task.id ? 'border-2 border-blue-500' : ''}
+              className={editingTask === task.id ? 'border-2 border-blue-500 rounded-md mb-2' : 'mb-2'}
             >
               <Task task={task} index={index} />
             </div>

@@ -6,7 +6,7 @@ const Task = ({ task, index }: TaskProps) => {
     <Draggable draggableId={task.id} index={index}>
       {(provided) => (
         <div
-          className="bg-white p-3 rounded-md shadow-md mb-3"
+          className="bg-white p-3 rounded-md shadow-md"
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
