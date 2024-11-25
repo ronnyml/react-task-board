@@ -14,12 +14,28 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     'in-progress': [],
     'done': []
   });
+  const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+  const [editingTask, setEditingTask] = useState<string | null>(null);
 
   useEffect(() => {
-    socket = io('http://localhost:5173');
+    socket = io('http://localhost:3000', { transports: ['websocket', 'polling'] });
+
+    socket.emit('new-user');
 
     socket.on('tasks-update', (updatedTasks: TasksState) => {
       setTasks(updatedTasks);
+    });
+
+    socket.on('user-joined', (users: string[]) => {
+      setConnectedUsers(users);
+    });
+
+    socket.on('user-left', (users: string[]) => {
+      setConnectedUsers(users);
+    });
+
+    socket.on('task-editing', (taskId: string) => {
+      setEditingTask(taskId);
     });
 
     return () => {
@@ -36,8 +52,15 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     }
   };
 
+  const startEditingTask = (taskId: string) => {
+    setEditingTask(taskId);
+    if (socket) {
+      socket.emit('task-editing', taskId);
+    }
+  };
+
   return (
-    <BoardContext.Provider value={{ tasks, updateTasks }}>
+    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingTask, startEditingTask }}>
       {children}
     </BoardContext.Provider>
   );

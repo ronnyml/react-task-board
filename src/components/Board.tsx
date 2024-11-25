@@ -4,7 +4,7 @@ import { useState } from 'react';
 import useBoard from '../hooks/useBoard';
 
 const Board = () => {
-  const { tasks, updateTasks } = useBoard();
+  const { tasks, updateTasks, connectedUsers } = useBoard();
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   const handleDragEnd = (result: DropResult) => {
@@ -44,6 +44,9 @@ const Board = () => {
         >
           Add Task
         </button>
+      </div>
+      <div className="mb-4">
+        <strong>Connected Users:</strong> {connectedUsers.join(', ')}
       </div>
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex space-x-4">
