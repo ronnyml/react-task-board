@@ -1,4 +1,4 @@
-import { Draggable } from 'react-beautiful-dnd';
+import { Draggable } from '@hello-pangea/dnd';
 import { TaskProps } from '../interfaces/TaskProps';
 
 const Task = ({ task, index }: TaskProps) => {

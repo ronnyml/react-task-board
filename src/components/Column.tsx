@@ -1,4 +1,4 @@
-import { Droppable } from 'react-beautiful-dnd';
+import { Droppable } from '@hello-pangea/dnd';
 import Task from './Task';
 import useBoard from '../hooks/useBoard';
 import { ColumnProps } from '../interfaces/ColumnProps';

@@ -1,4 +1,4 @@
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import Column from './Column';
 import { useState } from 'react';
 import useBoard from '../hooks/useBoard';
