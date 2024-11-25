@@ -35,12 +35,12 @@ const Board = () => {
           type="text"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
-          placeholder="Enter new task title"
-          className="border p-2 rounded h-10"
+          placeholder="Enter new task"
+          className="border p-2 rounded mr-5 h-11"
         />
         <button
           onClick={handleAddTask}
-          className="p-2 bg-blue-500 text-white rounded h-10"
+          className="px-5 bg-slate-800 text-white rounded h-10"
         >
           Add Task
         </button>

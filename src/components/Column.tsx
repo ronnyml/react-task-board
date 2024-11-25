@@ -10,7 +10,7 @@ const Column = ({ title, droppableId }: ColumnProps) => {
     <Droppable droppableId={droppableId} key={droppableId}>
       {(provided) => (
         <div
-          className="p-5 bg-gray-100 rounded-lg w-full"
+          className="p-5 bg-slate-200 rounded-xl w-full"
           ref={provided.innerRef}
           {...provided.droppableProps}
         >
