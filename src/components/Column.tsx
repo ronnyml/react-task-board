@@ -7,7 +7,7 @@ const Column = ({ title, droppableId }: ColumnProps) => {
   const { tasks } = useBoard();
 
   return (
-    <Droppable droppableId={droppableId} key={droppableId}>
+    <Droppable droppableId={droppableId}>
       {(provided) => (
         <div
           className="p-5 bg-slate-200 rounded-xl w-full"
@@ -15,7 +15,7 @@ const Column = ({ title, droppableId }: ColumnProps) => {
           {...provided.droppableProps}
         >
           <h2 className="font-bold mb-3">{title}</h2>
-          {tasks[droppableId].map((task, index) => (
+          {tasks[droppableId] && tasks[droppableId].map((task, index) => (
             <Task key={task.id} task={task} index={index} />
           ))}
           {provided.placeholder}

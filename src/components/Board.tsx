@@ -47,9 +47,9 @@ const Board = () => {
       </div>
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex space-x-4">
-          <Column title="To Do" droppableId="todo" />
-          <Column title="In Progress" droppableId="in-progress" />
-          <Column title="Done" droppableId="done" />
+          <Column key="todo" title="To Do" droppableId="todo" />
+          <Column key="in-progress" title="In Progress" droppableId="in-progress" />
+          <Column key="done" title="Done" droppableId="done" />
         </div>
       </DragDropContext>
     </div>
