@@ -4,7 +4,7 @@ import useBoard from '../hooks/useBoard';
 import { ColumnProps } from '../interfaces/ColumnProps';
 
 const Column = ({ title, droppableId }: ColumnProps) => {
-  const { tasks, editingTask, startEditingTask } = useBoard();
+  const { tasks, startEditingTask, stopEditingTask } = useBoard();
 
   return (
     <Droppable droppableId={droppableId}>
@@ -19,7 +19,9 @@ const Column = ({ title, droppableId }: ColumnProps) => {
             <div
               key={task.id}
               onMouseEnter={() => startEditingTask(task.id)}
-              className={editingTask === task.id ? 'border-2 border-blue-500 rounded-md mb-2' : 'mb-2'}
+              onMouseLeave={() => stopEditingTask(task.id)}
+              onMouseUp={() => stopEditingTask(task.id)}
+              className="mb-2"
             >
               <Task task={task} index={index} />
             </div>

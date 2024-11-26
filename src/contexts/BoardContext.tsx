@@ -16,10 +16,12 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   });
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
   const [editingTask, setEditingTask] = useState<string | null>(null);
+  const [editingUsers, setEditingUsers] = useState<{ [key: string]: string | null }>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     socket = io('http://localhost:3000', { transports: ['websocket', 'polling'] });
+
     socket.on('connect', () => {
       if (socket && socket.id) {
         const shortId = socket.id.slice(0, 5);
@@ -40,8 +42,8 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
       setConnectedUsers(users);
     });
 
-    socket.on('task-editing', (taskId: string) => {
-      setEditingTask(taskId);
+    socket.on('task-editing', (editingUsers: { [key: string]: string }) => {
+      setEditingUsers(editingUsers);
     });
 
     return () => {
@@ -59,14 +61,27 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   const startEditingTask = (taskId: string) => {
-    setEditingTask(taskId);
-    if (socket) {
-      socket.emit('task-editing', taskId);
+    if (socket && currentUserId) {
+      const updatedEditingUsers = { ...editingUsers, [taskId]: currentUserId };
+      setEditingUsers(updatedEditingUsers);
+      socket.emit('task-editing', updatedEditingUsers);
     }
   };
 
+  const stopEditingTask = (taskId: string) => {
+    if (socket && currentUserId) {
+      const updatedEditingUsers = { ...editingUsers };
+      if (updatedEditingUsers[taskId] === currentUserId) {
+        delete updatedEditingUsers[taskId];
+        setEditingUsers(updatedEditingUsers);
+        socket.emit('task-editing', updatedEditingUsers);
+      }
+    }
+    setEditingTask(null);
+  };
+
   return (
-    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingTask, startEditingTask, currentUserId }}>
+    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingUsers, editingTask, startEditingTask, stopEditingTask, currentUserId }}>
       {children}
     </BoardContext.Provider>
   );

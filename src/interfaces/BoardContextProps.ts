@@ -1,10 +1,12 @@
 import { TasksState } from './TasksState';
 
 export interface BoardContextProps {
-  tasks: TasksState;
-  updateTasks: (newTasks: TasksState) => void;
   connectedUsers: string[];
+  editingUsers: { [key: string]: string | null };
+  currentUserId: string | null;
   editingTask: string | null;
   startEditingTask: (taskId: string) => void;
-  currentUserId: string | null;
+  stopEditingTask: (taskId: string) => void;
+  tasks: TasksState;
+  updateTasks: (newTasks: TasksState) => void;
 }

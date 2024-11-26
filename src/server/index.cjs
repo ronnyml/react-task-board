@@ -18,6 +18,7 @@ let tasks = {
 };
 
 let connectedUsers = [];
+let editingUsers = {};
 
 io.on('connection', (socket) => {
   const shortId = socket.id.slice(0, 5);
@@ -32,9 +33,21 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('tasks-update', tasks);
   });
 
+  socket.on('task-editing', (updatedEditingUsers) => {
+    editingUsers = updatedEditingUsers;
+    io.emit('task-editing', editingUsers);
+  });
+
   socket.on('disconnect', () => {
     connectedUsers = connectedUsers.filter((id) => id !== shortId);
     io.emit('user-left', connectedUsers);
+
+    for (const taskId in editingUsers) {
+      if (editingUsers[taskId] === shortId) {
+        delete editingUsers[taskId];
+      }
+    }
+    io.emit('task-editing', editingUsers);
     console.log('user disconnected: ' + shortId);
   });
 });
