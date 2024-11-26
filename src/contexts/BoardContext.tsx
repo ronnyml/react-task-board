@@ -89,8 +89,20 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     updateTasks(updatedTasks);
   };
 
+  const contextValues: BoardContextProps = {
+    currentUserId,
+    connectedUsers,
+    editingUsers,
+    tasks,
+    editingTask,
+    updateTasks,
+    startEditingTask,
+    stopEditingTask,
+    deleteTask
+  };
+
   return (
-    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingUsers, editingTask, startEditingTask, stopEditingTask, deleteTask, currentUserId }}>
+    <BoardContext.Provider value={contextValues}>
       {children}
     </BoardContext.Provider>
   );
