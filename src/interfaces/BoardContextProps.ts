@@ -9,4 +9,5 @@ export interface BoardContextProps {
   stopEditingTask: (taskId: string) => void;
   tasks: TasksState;
   updateTasks: (newTasks: TasksState) => void;
+  deleteTask: (taskId: string) => void;
 }

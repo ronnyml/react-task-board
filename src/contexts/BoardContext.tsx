@@ -61,6 +61,7 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   const startEditingTask = (taskId: string) => {
+    setEditingTask(taskId);
     if (socket && currentUserId) {
       const updatedEditingUsers = { ...editingUsers, [taskId]: currentUserId };
       setEditingUsers(updatedEditingUsers);
@@ -69,19 +70,27 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   const stopEditingTask = (taskId: string) => {
+    setEditingTask(null);
     if (socket && currentUserId) {
       const updatedEditingUsers = { ...editingUsers };
       if (updatedEditingUsers[taskId] === currentUserId) {
         delete updatedEditingUsers[taskId];
-        setEditingUsers(updatedEditingUsers);
-        socket.emit('task-editing', updatedEditingUsers);
       }
+      setEditingUsers(updatedEditingUsers);
+      socket.emit('task-editing', updatedEditingUsers);
     }
-    setEditingTask(null);
+  };
+
+  const deleteTask = (taskId: string) => {
+    const updatedTasks = { ...tasks };
+    for (const column in updatedTasks) {
+      updatedTasks[column] = updatedTasks[column].filter((task) => task.id !== taskId);
+    }
+    updateTasks(updatedTasks);
   };
 
   return (
-    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingUsers, editingTask, startEditingTask, stopEditingTask, currentUserId }}>
+    <BoardContext.Provider value={{ tasks, updateTasks, connectedUsers, editingUsers, editingTask, startEditingTask, stopEditingTask, deleteTask, currentUserId }}>
       {children}
     </BoardContext.Provider>
   );
