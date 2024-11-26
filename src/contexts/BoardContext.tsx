@@ -20,7 +20,8 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    socket = io('http://localhost:3000', { transports: ['websocket', 'polling'] });
+    const serverUrl = import.meta.env.VITE_SERVER_URL;
+    socket = io(serverUrl, { transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => {
       if (socket && socket.id) {
