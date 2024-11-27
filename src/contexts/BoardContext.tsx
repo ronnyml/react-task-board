@@ -3,6 +3,7 @@ import io, { Socket } from 'socket.io-client';
 import { BoardContextProps } from '../interfaces/BoardContextProps';
 import { BoardProviderProps } from '../interfaces/BoardProviderProps';
 import { TasksState } from '../interfaces/TasksState';
+import { config } from '../config/config';
 
 const BoardContext = createContext<BoardContextProps | undefined>(undefined);
 
@@ -20,7 +21,7 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const serverUrl = import.meta.env.VITE_SERVER_URL;
+    const serverUrl = config.serverURL;
     socket = io(serverUrl, { transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => {
