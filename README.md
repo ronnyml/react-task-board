@@ -8,6 +8,10 @@ A real-time collaborative task board application that allows multiple users to m
 
 The project uses a React-based TypeScript frontend with Tailwind CSS for styling and a Node.js server using Socket.io for real-time communication.
 
+## Live demo
+
+[https://react-task-board-pied.vercel.app](https://react-task-board-pied.vercel.app)
+
 ## Code Structure
 
 The project structure follows a modular approach for better scalability and maintainability. Below is an overview of the key folders:
