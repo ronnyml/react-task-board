@@ -25,3 +25,7 @@ dist-ssr
 
 # Ignore all .env.* files
 .env.*
+
+# Playwright test artifacts
+.playwright-mcp/
+*.png
