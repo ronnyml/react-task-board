@@ -22,12 +22,20 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
+    // `ignore` prevents stale state updates from the effect's first run
+    // when React StrictMode unmounts and remounts the component in dev.
+    // socket.disconnect() fires the 'disconnect' event synchronously, so
+    // without this flag the cleanup-triggered disconnect would set
+    // socketConnected = false after the new socket has already connected.
+    let ignore = false;
+
     const serverUrl = config.serverURL;
     socket = io(serverUrl, { transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => {
+      if (ignore) return;
       setSocketConnected(true);
-      if (socket && socket.id) {
+      if (socket?.id) {
         const shortId = socket.id.slice(0, 5);
         setCurrentUserId(shortId);
         socket.emit('new-user');
@@ -35,33 +43,32 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     });
 
     socket.on('connect_error', () => {
-      setSocketConnected(false);
+      if (!ignore) setSocketConnected(false);
     });
 
     socket.on('disconnect', () => {
-      setSocketConnected(false);
+      if (!ignore) setSocketConnected(false);
     });
 
     socket.on('tasks-update', (updatedTasks: TasksState) => {
-      setTasks(updatedTasks);
+      if (!ignore) setTasks(updatedTasks);
     });
 
     socket.on('user-joined', (users: string[]) => {
-      setConnectedUsers(users);
+      if (!ignore) setConnectedUsers(users);
     });
 
     socket.on('user-left', (users: string[]) => {
-      setConnectedUsers(users);
+      if (!ignore) setConnectedUsers(users);
     });
 
-    socket.on('task-editing', (editingUsers: { [key: string]: string }) => {
-      setEditingUsers(editingUsers);
+    socket.on('task-editing', (updatedEditingUsers: { [key: string]: string }) => {
+      if (!ignore) setEditingUsers(updatedEditingUsers);
     });
 
     return () => {
-      if (socket) {
-        socket.disconnect();
-      }
+      ignore = true;
+      if (socket) socket.disconnect();
     };
   }, []);
 
