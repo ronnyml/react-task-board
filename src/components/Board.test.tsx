@@ -23,6 +23,7 @@ describe('Board Component', () => {
       currentUserId: null,
       editingUsers: {},
       editingTask: null,
+      socketConnected: false,
       startEditingTask: jest.fn(),
       stopEditingTask: jest.fn(),
       deleteTask: jest.fn()

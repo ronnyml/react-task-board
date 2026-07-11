@@ -21,7 +21,7 @@ const COLUMNS = [
 ];
 
 const Board = () => {
-  const { tasks, updateTasks, connectedUsers, currentUserId } = useBoard();
+  const { tasks, updateTasks, connectedUsers, currentUserId, socketConnected } = useBoard();
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   const tasksRef = useRef<TasksState>(tasks);
@@ -151,37 +151,50 @@ const Board = () => {
 
       {/* Connected Users */}
       <div className="flex items-center gap-3 p-3 bg-[#0d1628]/60 border border-white/6 rounded-xl w-fit">
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs text-slate-500 font-medium">Online</span>
-        </div>
-        <div className="w-px h-4 bg-white/8" />
-        <div className="flex items-center gap-1.5">
-          {connectedUsers.map((user) => {
-            const isYou = user === currentUserId;
-            return (
-              <div key={user} className="relative group">
-                <div
-                  className={[
-                    'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white transition-transform hover:scale-110',
-                    isYou ? 'outline-2 outline-offset-1' : '',
-                  ].join(' ')}
-                  style={{
-                    backgroundColor: getUserColor(user),
-                    outline: isYou ? `2px solid ${getUserColor(user)}` : undefined,
-                    outlineOffset: '2px',
-                  }}
-                  title={isYou ? `${user} (you)` : user}
-                >
-                  {user.charAt(0).toUpperCase()}
-                </div>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-slate-800 border border-white/10 rounded text-[10px] text-slate-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                  {user}{isYou ? ' (you)' : ''}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {socketConnected ? (
+          <>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs text-slate-500 font-medium">
+                {connectedUsers.length} online
+              </span>
+            </div>
+            <div className="w-px h-4 bg-white/8" />
+            <div className="flex items-center gap-1.5">
+              {connectedUsers.map((user) => {
+                const isYou = user === currentUserId;
+                return (
+                  <div key={user} className="relative group">
+                    <div
+                      className={[
+                        'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white transition-transform hover:scale-110',
+                        isYou ? 'outline-2 outline-offset-1' : '',
+                      ].join(' ')}
+                      style={{
+                        backgroundColor: getUserColor(user),
+                        outline: isYou ? `2px solid ${getUserColor(user)}` : undefined,
+                        outlineOffset: '2px',
+                      }}
+                      title={isYou ? `${user} (you)` : user}
+                    >
+                      {user.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-slate-800 border border-white/10 rounded text-[10px] text-slate-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      {user}{isYou ? ' (you)' : ''}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            <span className="text-xs text-slate-600 font-medium">
+              Not connected — run <code className="text-slate-500 bg-white/5 px-1 rounded">npm run server</code>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

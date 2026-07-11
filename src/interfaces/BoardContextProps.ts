@@ -5,6 +5,7 @@ export interface BoardContextProps {
   editingUsers: { [key: string]: string | null };
   currentUserId: string | null;
   editingTask: string | null;
+  socketConnected: boolean;
   startEditingTask: (taskId: string) => void;
   stopEditingTask: (taskId: string) => void;
   tasks: TasksState;

@@ -19,17 +19,27 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingUsers, setEditingUsers] = useState<{ [key: string]: string | null }>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
     const serverUrl = config.serverURL;
     socket = io(serverUrl, { transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => {
+      setSocketConnected(true);
       if (socket && socket.id) {
         const shortId = socket.id.slice(0, 5);
         setCurrentUserId(shortId);
         socket.emit('new-user');
       }
+    });
+
+    socket.on('connect_error', () => {
+      setSocketConnected(false);
+    });
+
+    socket.on('disconnect', () => {
+      setSocketConnected(false);
     });
 
     socket.on('tasks-update', (updatedTasks: TasksState) => {
@@ -97,6 +107,7 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     editingUsers,
     tasks,
     editingTask,
+    socketConnected,
     updateTasks,
     startEditingTask,
     stopEditingTask,

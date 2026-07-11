@@ -30,7 +30,8 @@ describe('Task Component', () => {
       connectedUsers: [],
       startEditingTask: mockStartEditingTask,
       stopEditingTask: mockStopEditingTask,
-      editingTask: null
+      editingTask: null,
+      socketConnected: false
     };
 
     mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
