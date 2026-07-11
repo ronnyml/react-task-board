@@ -1,107 +1,81 @@
-# Collaborative Task Board Real-time App
+# Collaborative Task Board
 
-A real-time collaborative task board application that allows multiple users to manage tasks in columns such as "To Do," "In Progress," and "Done." 
+A real-time collaborative task board where multiple users can manage tasks together — drag tasks between columns, see live presence of teammates, and watch changes appear instantly across every connected browser.
 
-- Users can drag and drop tasks between columns, add new tasks, and see which tasks are being edited by others in real-time. Creating, editing, deleting, and moving tasks between columns: “To Do”, “In Progress”, “Done”.
-- View changes in real-time when multiple users interact with the board.
-- Display the presence of other connected users and highlighting which task they are editing or moving at the moment.
-
-The project uses a React-based TypeScript frontend with Tailwind CSS for styling and a Node.js server using Socket.io for real-time communication.
-
-## Live demo
+## Live Demo
 
 [https://react-task-board-pied.vercel.app](https://react-task-board-pied.vercel.app)
 
-## Code Structure
+## Screenshot
 
-The project structure follows a modular approach for better scalability and maintainability. Below is an overview of the key folders:
+![Collaborative Task Board](docs/screenshot.png)
 
-- **src**: The root of the project containing all source code.
-  - **components**: Contains all UI components used in the app. This helps in breaking down the user interface into reusable parts, making the code more readable and maintainable.
-  - **config**: Stores configuration settings such as server URLs, allowing for easy updates and centralized management of configuration values.
-  - **contexts**: Manages global state using React Context API, which makes it easier to share state across components without prop drilling.
-  - **hooks**: Contains custom hooks that encapsulate reusable logic, enhancing code reusability and readability.
-  - **interfaces**: Defines TypeScript interfaces for type safety, ensuring that the data structures used across the project are consistent and reducing the chances of runtime errors.
-  - **server**: Contains the backend code using Node.js and Socket.io to manage server-client interactions, ensuring the app’s real-time capabilities.
-  - **styles**: Contains the styling files, which makes it easy to manage and update styles consistently across the application.
-  - **main.tsx**: Entry point of the client-side application where the root component is rendered.
-  - **vite-env.d.ts**: Environment types definition for Vite.
+*Two users (Alice and Bob) collaborating in real time — tasks spread across To Do, In Progress, and Done columns, with live presence shown at the bottom.*
 
-### Code Organization and structure
+## Features
 
-- **Modularization**: The codebase is divided into separate modules (components, contexts, hooks, etc.) to make it easier to manage, maintain, and scale. Each folder has a specific purpose, reducing complexity and improving readability.
-- **Reusability**: By using components and custom hooks, the code becomes more reusable, allowing common functionality to be shared across the application.
-- **Scalability**: This structure supports future growth by making it easy to add new features without significantly impacting existing code.
-- **Separation of Concerns**: Each module has a distinct responsibility, which leads to a cleaner and more organized codebase. For example, UI logic is separated from state management and configuration settings, making debugging and maintenance easier.
+- **Named user presence** — enter your name when you join; teammates see your name (not a random ID) in the connected users panel
+- **Real-time sync** — every task add, move, or delete is broadcast instantly to all connected browsers via Socket.io
+- **Drag-and-drop** — powered by [@atlaskit/pragmatic-drag-and-drop](https://atlassian.design/components/pragmatic-drag-and-drop), with precise closest-edge drop indicators for intra-column reordering
+- **Live editing awareness** — hovering a task shows other users' names, so teammates know when you're looking at a card
+- **Task management** — add tasks via input (Enter or button), delete with confirmation
+- **Rename yourself** — change your display name at any time with the ✎ rename button
+- **Connection status** — green pulse when live, red indicator when the server is unreachable
+- **Dark professional UI** — glassmorphic columns, accent-colored task borders per column, smooth transitions
 
-## Code Decisions
+## Tech Stack
 
-- **State Management**: The app uses React Context API and hooks to manage the state of tasks, editing users, and connected users. The context is provided globally so that different components can easily access and modify the state.
-- **Real-time Features**: Socket.io is used to handle real-time communication between the server and the client. This allows multiple users to collaborate on the task board seamlessly.
-- **Drag and Drop**: The `@hello-pangea/dnd` library is used to provide drag-and-drop functionality. This library is highly customizable and integrates well with React.
+| Layer | Library / Tool |
+|---|---|
+| UI framework | React 19 |
+| Language | TypeScript 5.8 |
+| Styling | Tailwind CSS 4 (Vite plugin, no config file) |
+| Drag and drop | @atlaskit/pragmatic-drag-and-drop 1.4 |
+| Real-time | Socket.io (client + server) |
+| Build tool | Vite 6 |
+| Testing | Jest + React Testing Library |
+| Dev runner | concurrently (Vite + socket server in one command) |
 
-## Libraries Used
+## Getting Started
 
-### Client-side
+```sh
+npm install
+npm run dev
+```
 
-- **React**: The main JavaScript library used for building the user interface.
-- **Tailwind CSS**: A utility-first CSS framework that provides a quick way to style the UI with predefined classes.
-- **@hello-pangea/dnd**: A drag-and-drop library that enables task movement between columns.
-- **Jest**: A JavaScript testing framework used for unit testing React components.
+That's it — `npm run dev` starts both the Vite frontend and the Socket.io server together. Open `http://localhost:5173` (or whichever port Vite picks) in multiple browser tabs to see real-time collaboration.
 
-### Server-side
+The socket server runs on port **3001**. If you need a different URL, set `VITE_SERVER_URL` in a `.env` file:
 
-- **Express**: A web application framework for Node.js used to create the server.
-- **Socket.io**: A library for real-time web applications used to handle WebSocket connections between clients and the server.
-
-## Installation
-
-Follow these steps to get the app running locally:
-
-1. **Install dependencies**:
-
-   ```sh
-   npm install
-   ```
-
-2. **Set up environment variables**:
-
-   - Create a `.env` file in the root of the project in case you don't have the .env file.
-   - Add the server URL:
-     ```
-     VITE_SERVER_URL=http://localhost:3000
-     ```
-
-3. **Run the client-side application**:
-
-   ```sh
-   npm run dev
-   ```
-
-4. **Run the server**:
-
-   ```sh
-   npm run server
-   ```
+```
+VITE_SERVER_URL=http://localhost:3001
+```
 
 ## Running Tests
 
-Unit tests are provided for key components and context. To run the tests, use:
-
 ```sh
-npm run test
+npm test
 ```
 
-The tests are implemented using Jest and focus on ensuring that core features, such as task editing and drag-and-drop, function as expected.
+Unit tests cover all components and the board context using Jest and React Testing Library.
 
-## Key Features
+## Project Structure
 
-- **Real-time Collaboration**: Users can see updates made by others in real-time, including task movement and editing.
-- **Drag-and-Drop Interface**: Users can easily move tasks between columns.
-- **Task Editing Awareness**: When another user is editing a task, it is highlighted to prevent conflicting edits.
+```
+src/
+  components/     UI components (Board, Column, Task, Header, NamePrompt)
+  contexts/       BoardContext — global state, socket lifecycle, user presence
+  hooks/          useBoard — typed context consumer
+  interfaces/     TypeScript interfaces
+  config/         Server URL config
+  server/         Node.js + Socket.io server (index.cjs)
+  styles/         Global CSS (Tailwind v4 import + dark theme vars)
+```
 
-## Technologies Used
+## Architecture Notes
 
-- **Frontend**: React, Tailwind CSS, Socket.io client, Vite
-- **Backend**: Node.js, Express, Socket.io
-- **Testing**: Jest, React Testing Library
+- **Single `npm run dev`** uses `concurrently` to launch the Vite dev server and the Socket.io server in parallel
+- **React 19 StrictMode** double-mounts effects; the socket cleanup uses an `ignore` flag so the disconnect handler from the old mount doesn't overwrite the new connection's state
+- **Stale closure prevention** — Board's `monitorForElements` callback reads tasks through a ref (`tasksRef`) so it always sees current state without needing to re-register the monitor
+- **Closest-edge ordering** — `@atlaskit/pragmatic-drag-and-drop-hitbox` computes whether a drag target's top or bottom half is nearest, enabling precise intra-column reordering
+- **User names** persist in `localStorage` (`taskboard-username`) and are sent to the server on reconnect so names survive a page refresh
