@@ -38,7 +38,7 @@ describe('Board Component', () => {
       </BoardContext.Provider>
     );
 
-    const input = screen.getByPlaceholderText('Enter new task');
+    const input = screen.getByPlaceholderText('New task title…');
     const addButton = screen.getByText('Add Task');
 
     fireEvent.change(input, { target: { value: 'New Task Title' } });

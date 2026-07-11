@@ -1,5 +1,4 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import Task from './Task';
 import useBoard from '../hooks/useBoard';
 import { TaskProps } from '../interfaces/TaskProps';
@@ -18,7 +17,8 @@ describe('Task Component', () => {
   beforeEach(() => {
     props = {
       task: { id: 'task-1', title: 'Task 1' },
-      index: 0
+      index: 0,
+      columnId: 'todo'
     };
 
     mockUseBoardReturnValue = {
@@ -37,24 +37,9 @@ describe('Task Component', () => {
     jest.clearAllMocks();
   });
 
-  const renderWithFullContext = (ui: React.ReactElement) => {
-    return render(
-      <DragDropContext onDragEnd={jest.fn()}>
-        <Droppable droppableId="droppable">
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps}>
-              {ui}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-    );
-  };
-
   it('should call deleteTask when the delete button is clicked and user confirms', () => {
     window.confirm = jest.fn(() => true);
-    renderWithFullContext(<Task {...props} />);
+    render(<Task {...props} />);
 
     const deleteButton = screen.getByLabelText('Delete task');
     fireEvent.click(deleteButton);
@@ -65,7 +50,7 @@ describe('Task Component', () => {
 
   it('should not call deleteTask when the delete button is clicked and user cancels', () => {
     window.confirm = jest.fn(() => false);
-    renderWithFullContext(<Task {...props} />);
+    render(<Task {...props} />);
 
     const deleteButton = screen.getByLabelText('Delete task');
     fireEvent.click(deleteButton);
@@ -75,7 +60,7 @@ describe('Task Component', () => {
   });
 
   it('should render the task with the title', () => {
-    renderWithFullContext(<Task {...props} />);
+    render(<Task {...props} />);
     expect(screen.getByText('Task 1')).toBeInTheDocument();
   });
 
@@ -83,15 +68,15 @@ describe('Task Component', () => {
     mockUseBoardReturnValue.editingUsers = { 'task-1': 'user-2' };
     mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
 
-    renderWithFullContext(<Task {...props} />);
-    expect(screen.getByText('User user-2 is editing...')).toBeInTheDocument();
+    render(<Task {...props} />);
+    expect(screen.getByText('user-2 is viewing…')).toBeInTheDocument();
   });
 
   it('should not show editing indicator when the current user is editing the task', () => {
     mockUseBoardReturnValue.editingUsers = { 'task-1': 'user-1' };
     mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
 
-    renderWithFullContext(<Task {...props} />);
-    expect(screen.queryByText('User user-1 is editing...')).not.toBeInTheDocument();
+    render(<Task {...props} />);
+    expect(screen.queryByText('user-1 is viewing…')).not.toBeInTheDocument();
   });
 });
