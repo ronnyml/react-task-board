@@ -1,5 +1,6 @@
 import { BoardProvider } from './contexts/BoardContext';
 import Board from './components/Board';
+import NamePrompt from './components/NamePrompt';
 import useBoard from './hooks/useBoard';
 
 const Header = () => {
@@ -8,6 +9,14 @@ const Header = () => {
     <header className="sticky top-0 z-20 border-b border-white/8 bg-[#060d1f]/80 backdrop-blur-md">
       <div className="container mx-auto px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow shadow-blue-500/30">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+          </div>
           <span className="text-base font-semibold bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
             React Task Board
           </span>
@@ -31,17 +40,23 @@ const Header = () => {
   );
 };
 
-const App = () => {
+const AppContent = () => {
+  const { userName } = useBoard();
   return (
-    <BoardProvider>
-      <div className="min-h-screen bg-[#060d1f]">
-        <Header />
-        <main className="container mx-auto px-6 py-7">
-          <Board />
-        </main>
-      </div>
-    </BoardProvider>
+    <div className="min-h-screen bg-[#060d1f]">
+      {!userName && <NamePrompt />}
+      <Header />
+      <main className="container mx-auto px-6 py-7">
+        <Board />
+      </main>
+    </div>
   );
 };
+
+const App = () => (
+  <BoardProvider>
+    <AppContent />
+  </BoardProvider>
+);
 
 export default App;

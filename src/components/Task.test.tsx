@@ -28,10 +28,13 @@ describe('Task Component', () => {
       tasks: {},
       updateTasks: jest.fn(),
       connectedUsers: [],
+      userNames: {},
       startEditingTask: mockStartEditingTask,
       stopEditingTask: mockStopEditingTask,
       editingTask: null,
-      socketConnected: false
+      socketConnected: false,
+      userName: 'Tester',
+      setUserName: jest.fn()
     };
 
     mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
@@ -65,8 +68,18 @@ describe('Task Component', () => {
     expect(screen.getByText('Task 1')).toBeInTheDocument();
   });
 
-  it('should show editing indicator when another user is editing the task', () => {
+  it('should show editing indicator with resolved name when another user is editing', () => {
     mockUseBoardReturnValue.editingUsers = { 'task-1': 'user-2' };
+    mockUseBoardReturnValue.userNames = { 'user-2': 'Alice' };
+    mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
+
+    render(<Task {...props} />);
+    expect(screen.getByText('Alice is viewing…')).toBeInTheDocument();
+  });
+
+  it('should fall back to id when no name is found for the editing user', () => {
+    mockUseBoardReturnValue.editingUsers = { 'task-1': 'user-2' };
+    mockUseBoardReturnValue.userNames = {};
     mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
 
     render(<Task {...props} />);

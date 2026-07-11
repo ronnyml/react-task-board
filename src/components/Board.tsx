@@ -21,7 +21,7 @@ const COLUMNS = [
 ];
 
 const Board = () => {
-  const { tasks, updateTasks, connectedUsers, currentUserId, socketConnected } = useBoard();
+  const { tasks, updateTasks, connectedUsers, currentUserId, socketConnected, userName, setUserName } = useBoard();
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   const tasksRef = useRef<TasksState>(tasks);
@@ -150,42 +150,50 @@ const Board = () => {
       </div>
 
       {/* Connected Users */}
-      <div className="flex items-center gap-3 p-3 bg-[#0d1628]/60 border border-white/6 rounded-xl w-fit">
+      <div className="flex items-center gap-3 p-3 bg-[#0d1628]/60 border border-white/6 rounded-xl">
         {socketConnected ? (
           <>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               <span className="text-xs text-slate-500 font-medium">
                 {connectedUsers.length} online
               </span>
             </div>
-            <div className="w-px h-4 bg-white/8" />
-            <div className="flex items-center gap-1.5">
+            <div className="w-px h-4 bg-white/8 shrink-0" />
+            <div className="flex items-center gap-2 flex-wrap">
               {connectedUsers.map((user) => {
-                const isYou = user === currentUserId;
+                const isYou = user.id === currentUserId;
                 return (
-                  <div key={user} className="relative group">
+                  <div key={user.id} className="flex items-center gap-1.5 group relative">
                     <div
-                      className={[
-                        'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white transition-transform hover:scale-110',
-                        isYou ? 'outline-2 outline-offset-1' : '',
-                      ].join(' ')}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                       style={{
-                        backgroundColor: getUserColor(user),
-                        outline: isYou ? `2px solid ${getUserColor(user)}` : undefined,
+                        backgroundColor: getUserColor(user.id),
+                        outline: isYou ? `2px solid ${getUserColor(user.id)}` : undefined,
                         outlineOffset: '2px',
                       }}
-                      title={isYou ? `${user} (you)` : user}
                     >
-                      {user.charAt(0).toUpperCase()}
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-slate-800 border border-white/10 rounded text-[10px] text-slate-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      {user}{isYou ? ' (you)' : ''}
-                    </div>
+                    <span className="text-xs text-slate-400 font-medium">
+                      {user.name}{isYou ? <span className="text-slate-600"> (you)</span> : null}
+                    </span>
                   </div>
                 );
               })}
             </div>
+            <div className="w-px h-4 bg-white/8 shrink-0" />
+            {/* Name change */}
+            <button
+              onClick={() => {
+                const newName = window.prompt('Change your name:', userName);
+                if (newName?.trim()) setUserName(newName.trim());
+              }}
+              className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors shrink-0"
+              title="Change your name"
+            >
+              ✎ rename
+            </button>
           </>
         ) : (
           <div className="flex items-center gap-2">

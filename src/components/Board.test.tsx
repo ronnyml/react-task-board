@@ -20,10 +20,13 @@ describe('Board Component', () => {
       },
       updateTasks: jest.fn(),
       connectedUsers: [],
+      userNames: {},
       currentUserId: null,
       editingUsers: {},
       editingTask: null,
       socketConnected: false,
+      userName: 'Tester',
+      setUserName: jest.fn(),
       startEditingTask: jest.fn(),
       stopEditingTask: jest.fn(),
       deleteTask: jest.fn()

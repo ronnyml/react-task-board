@@ -19,15 +19,16 @@ const DROP_LINE_COLOR: Record<string, string> = {
 };
 
 const Task = ({ task, index, columnId }: TaskProps) => {
-  const { editingUsers, currentUserId, deleteTask } = useBoard();
+  const { editingUsers, currentUserId, deleteTask, userNames } = useBoard();
   const cardRef = useRef<HTMLDivElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const isBeingEdited = editingUsers[task.id] && editingUsers[task.id] !== currentUserId;
-  const editingUser = editingUsers[task.id];
+  const editingUserId = editingUsers[task.id];
+  const isBeingEdited = !!editingUserId && editingUserId !== currentUserId;
+  const editingUserName = editingUserId ? (userNames[editingUserId] ?? editingUserId) : null;
 
   const borderClass = COLUMN_TASK_BORDER[columnId] ?? 'border-l-slate-500';
   const dropLineClass = DROP_LINE_COLOR[columnId] ?? 'bg-slate-500';
@@ -103,7 +104,7 @@ const Task = ({ task, index, columnId }: TaskProps) => {
           {isBeingEdited && (
             <span className="mt-1.5 flex items-center gap-1 text-[11px] text-blue-400">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              {editingUser} is viewing…
+              {editingUserName} is viewing…
             </span>
           )}
         </div>

@@ -17,16 +17,24 @@ let tasks = {
   'done': []
 };
 
-let connectedUsers = [];
+let connectedUsers = []; // { id: string, name: string }[]
 let editingUsers = {};
 
 io.on('connection', (socket) => {
   const shortId = socket.id.slice(0, 5);
-  connectedUsers.push(shortId);
+  connectedUsers.push({ id: shortId, name: shortId });
   io.emit('user-joined', connectedUsers);
 
   console.log('a user connected: ' + shortId);
   socket.emit('tasks-update', tasks);
+
+  socket.on('set-name', (name) => {
+    const user = connectedUsers.find((u) => u.id === shortId);
+    if (user) {
+      user.name = name;
+      io.emit('user-joined', connectedUsers);
+    }
+  });
 
   socket.on('tasks-update', (updatedTasks) => {
     tasks = updatedTasks;
@@ -39,7 +47,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    connectedUsers = connectedUsers.filter((id) => id !== shortId);
+    connectedUsers = connectedUsers.filter((u) => u.id !== shortId);
     io.emit('user-left', connectedUsers);
 
     for (const taskId in editingUsers) {
