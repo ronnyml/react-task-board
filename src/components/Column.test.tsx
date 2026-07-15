@@ -10,9 +10,8 @@ const mockUseBoard = useBoard as jest.MockedFunction<typeof useBoard>;
 describe('Column Component', () => {
   const mockStartEditingTask = jest.fn();
   const mockStopEditingTask = jest.fn();
-  const mockOnDeleteColumn = jest.fn();
-  const mockOnRenameColumn = jest.fn();
   const mockOnDeleteTask = jest.fn();
+  const mockUpdateTasks = jest.fn();
 
   let props: ColumnProps;
 
@@ -21,8 +20,6 @@ describe('Column Component', () => {
       title: 'To Do',
       columnId: 'todo',
       searchQuery: '',
-      onDeleteColumn: mockOnDeleteColumn,
-      onRenameColumn: mockOnRenameColumn,
       onDeleteTask: mockOnDeleteTask,
     };
 
@@ -33,11 +30,11 @@ describe('Column Component', () => {
           { id: 'task-2', title: 'Task 2' }
         ]
       },
+      updateTasks: mockUpdateTasks,
       startEditingTask: mockStartEditingTask,
       stopEditingTask: mockStopEditingTask,
       editingUsers: {},
       currentUserId: null,
-      updateTasks: jest.fn(),
       updateTask: jest.fn(),
       connectedUsers: [],
       userNames: {},
@@ -84,12 +81,8 @@ describe('Column Component', () => {
     expect(screen.queryByText('Task 2')).not.toBeInTheDocument();
   });
 
-  it('should show delete column button when column is empty', () => {
-    mockUseBoard.mockReturnValue({
-      ...mockUseBoard(),
-      tasks: { 'todo': [] },
-    });
+  it('should show the add task input in every column', () => {
     render(<Column {...props} />);
-    expect(screen.getByLabelText('Remove column')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('+ Add a task…')).toBeInTheDocument();
   });
 });

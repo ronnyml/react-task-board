@@ -3,6 +3,7 @@ import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element
 import Task from './Task';
 import useBoard from '../hooks/useBoard';
 import { ColumnProps } from '../interfaces/ColumnProps';
+import { Task as TaskType } from '../interfaces/Task';
 
 const COLUMN_CONFIG: Record<string, {
   accent: string;
@@ -32,20 +33,11 @@ const getFallbackConfig = (columnId: string) => {
   return { accent: color, badgeClass: 'bg-slate-700/60 text-slate-400 ring-1 ring-inset ring-white/10', glowClass: 'ring-slate-500/30' };
 };
 
-interface ColumnComponentProps extends ColumnProps {
-  searchQuery: string;
-  onDeleteColumn: (columnId: string) => void;
-  onRenameColumn: (columnId: string, title: string) => void;
-  onDeleteTask: (taskId: string) => void;
-}
-
-const Column = ({ title, columnId, searchQuery, onDeleteColumn, onRenameColumn, onDeleteTask }: ColumnComponentProps) => {
-  const { tasks, startEditingTask, stopEditingTask } = useBoard();
+const Column = ({ title, columnId, searchQuery, onDeleteTask }: ColumnProps) => {
+  const { tasks, updateTasks, startEditingTask, stopEditingTask } = useBoard();
   const colRef = useRef<HTMLDivElement>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleDraft, setTitleDraft] = useState(title);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
 
   const config = COLUMN_CONFIG[columnId] ?? getFallbackConfig(columnId);
   const columnTasks = tasks[columnId] ?? [];
@@ -56,8 +48,6 @@ const Column = ({ title, columnId, searchQuery, onDeleteColumn, onRenameColumn, 
         (t.description ?? '').toLowerCase().includes(searchQuery.toLowerCase())
       )
     : columnTasks;
-
-  const isEmpty = columnTasks.length === 0;
 
   useEffect(() => {
     const el = colRef.current;
@@ -73,30 +63,15 @@ const Column = ({ title, columnId, searchQuery, onDeleteColumn, onRenameColumn, 
     });
   }, [columnId]);
 
-  useEffect(() => {
-    setTitleDraft(title);
-  }, [title]);
-
-  const startTitleEdit = () => {
-    setIsEditingTitle(true);
-    setTimeout(() => {
-      titleInputRef.current?.select();
-    }, 20);
-  };
-
-  const commitTitleEdit = () => {
-    const trimmed = titleDraft.trim();
-    if (trimmed && trimmed !== title) {
-      onRenameColumn(columnId, trimmed);
-    } else {
-      setTitleDraft(title);
-    }
-    setIsEditingTitle(false);
-  };
-
-  const handleTitleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') commitTitleEdit();
-    if (e.key === 'Escape') { setTitleDraft(title); setIsEditingTitle(false); }
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newTaskTitle.trim();
+    if (!trimmed) return;
+    const newTask: TaskType = { id: `task-${Date.now()}`, title: trimmed };
+    const updatedTasks = { ...tasks };
+    updatedTasks[columnId] = [newTask, ...(updatedTasks[columnId] ?? [])];
+    updateTasks(updatedTasks);
+    setNewTaskTitle('');
   };
 
   return (
@@ -118,49 +93,16 @@ const Column = ({ title, columnId, searchQuery, onDeleteColumn, onRenameColumn, 
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3 gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {isEditingTitle ? (
-            <input
-              ref={titleInputRef}
-              value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
-              onBlur={commitTitleEdit}
-              onKeyDown={handleTitleKey}
-              className="flex-1 min-w-0 bg-white/6 border border-white/15 text-slate-200 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-              autoFocus
-            />
-          ) : (
-            <h2
-              className="text-xs font-semibold uppercase tracking-widest text-slate-400 cursor-pointer hover:text-slate-200 transition-colors truncate"
-              onDoubleClick={startTitleEdit}
-              title="Double-click to rename"
-            >
-              {title}
-            </h2>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 tabular-nums ${config.badgeClass}`}>
-            {columnTasks.length}
-          </span>
-          {isEmpty && (
-            <button
-              onClick={() => onDeleteColumn(columnId)}
-              className="p-0.5 rounded text-slate-700 hover:text-red-400 transition-colors"
-              title="Remove column"
-              aria-label="Remove column"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          )}
-        </div>
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400 truncate">
+          {title}
+        </h2>
+        <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 tabular-nums shrink-0 ${config.badgeClass}`}>
+          {columnTasks.length}
+        </span>
       </div>
 
       {/* Tasks */}
-      <div className="flex flex-col flex-1 gap-2 px-3 pb-4 overflow-y-auto">
+      <div className="flex flex-col flex-1 gap-2 px-3 overflow-y-auto">
         {columnTasks.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center py-10 gap-2 border-2 border-dashed border-white/6 rounded-lg m-1">
             <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center">
@@ -192,6 +134,19 @@ const Column = ({ title, columnId, searchQuery, onDeleteColumn, onRenameColumn, 
             </div>
           ))
         )}
+      </div>
+
+      {/* Add task input */}
+      <div className="px-3 pb-3 pt-2">
+        <form onSubmit={handleAddTask}>
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="+ Add a task…"
+            className="w-full bg-transparent text-xs text-slate-500 placeholder:text-slate-700 focus:placeholder:text-slate-600 focus:text-slate-300 focus:bg-white/4 rounded-lg px-2.5 py-2 border border-transparent focus:border-white/10 outline-none transition-all"
+          />
+        </form>
       </div>
     </div>
   );

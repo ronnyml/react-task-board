@@ -41,7 +41,7 @@ const NamePrompt = () => {
           Join the board
         </h2>
         <p className="text-sm text-slate-500 text-center mb-6">
-          Enter your name so teammates know who you are
+          Enter your name
         </p>
 
         {/* Avatar preview */}

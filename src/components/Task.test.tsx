@@ -67,7 +67,7 @@ describe('Task Component', () => {
 
   it('should open task modal when card is clicked', () => {
     render(<Task {...props} />);
-    const card = screen.getByText('Task 1').closest('[class*="rounded-xl"]') as HTMLElement;
+    const card = screen.getByText('Task 1').closest('[class*="rounded-r-xl"]') as HTMLElement;
     fireEvent.click(card);
     expect(mockOpenTask).toHaveBeenCalledWith('task-1', 'todo');
   });

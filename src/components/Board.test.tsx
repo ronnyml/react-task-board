@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import Board from './Board';
 import useBoard from '../hooks/useBoard';
 import { BoardContext } from '../contexts/BoardContext';
@@ -46,28 +46,23 @@ describe('Board Component', () => {
     mockUseBoard.mockReturnValue(contextValue);
   });
 
-  it('should handle adding a new task correctly', () => {
+  it('should render the search bar', () => {
     render(
       <BoardContext.Provider value={contextValue}>
         <Board />
       </BoardContext.Provider>
     );
+    expect(screen.getByPlaceholderText('Search tasks…')).toBeInTheDocument();
+  });
 
-    const input = screen.getByPlaceholderText('New task title…');
-    const addButton = screen.getByText('Add Task');
-
-    fireEvent.change(input, { target: { value: 'New Task Title' } });
-    fireEvent.click(addButton);
-
-    expect(contextValue.updateTasks).toHaveBeenCalledWith({
-      'todo': [
-        { id: expect.stringMatching(/^task-\d+$/), title: 'New Task Title' },
-        ...contextValue.tasks['todo']
-      ],
-      'in-progress': contextValue.tasks['in-progress'],
-      'done': contextValue.tasks['done']
-    });
-
-    expect(input).toHaveValue('');
+  it('should render a column for each entry in columns', () => {
+    render(
+      <BoardContext.Provider value={contextValue}>
+        <Board />
+      </BoardContext.Provider>
+    );
+    expect(screen.getByText('To Do')).toBeInTheDocument();
+    expect(screen.getByText('In Progress')).toBeInTheDocument();
+    expect(screen.getByText('Done')).toBeInTheDocument();
   });
 });

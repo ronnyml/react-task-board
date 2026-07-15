@@ -25,12 +25,11 @@ interface UndoState {
 const Board = () => {
   const {
     tasks, updateTasks, deleteTask,
-    columns, updateColumns,
+    columns,
     connectedUsers, currentUserId, socketConnected, userName, setUserName,
     selectedTaskId,
   } = useBoard();
 
-  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [undoState, setUndoState] = useState<UndoState | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,21 +110,6 @@ const Board = () => {
     });
   }, []);
 
-  const handleAddTask = () => {
-    const title = newTaskTitle.trim();
-    if (!title || columns.length === 0) return;
-    const firstColumnId = columns[0].id;
-    const newTask: Task = { id: `task-${Date.now()}`, title };
-    const updatedTasks = { ...tasks };
-    updatedTasks[firstColumnId] = [newTask, ...(updatedTasks[firstColumnId] ?? [])];
-    updateTasks(updatedTasks);
-    setNewTaskTitle('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleAddTask();
-  };
-
   const handleDeleteWithUndo = useCallback((taskId: string) => {
     let found: UndoState | null = null;
     for (const colId in tasks) {
@@ -155,77 +139,32 @@ const Board = () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
-  const handleAddColumn = () => {
-    const id = `col-${Date.now()}`;
-    updateColumns([...columns, { id, title: 'New Column' }]);
-    updateTasks({ ...tasks, [id]: [] });
-  };
-
-  const handleDeleteColumn = (columnId: string) => {
-    updateColumns(columns.filter((c) => c.id !== columnId));
-    const newTasks = { ...tasks };
-    delete newTasks[columnId];
-    updateTasks(newTasks);
-  };
-
-  const handleRenameColumn = (columnId: string, title: string) => {
-    updateColumns(columns.map((c) => c.id === columnId ? { ...c, title } : c));
-  };
-
   return (
     <div className="flex flex-col gap-5">
-      {/* Toolbar: search + add task */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tasks…"
-            className="w-full bg-[#0d1628] border border-white/8 text-slate-300 placeholder:text-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/30 transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-3 flex items-center text-slate-600 hover:text-slate-400"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          )}
+      {/* Search bar */}
+      <div className="relative w-full sm:w-72">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
         </div>
-
-        {/* Add task */}
-        <div className="flex gap-2 sm:w-auto">
-          <div className="relative flex-1 sm:flex-none sm:w-56">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="New task title…"
-              className="w-full bg-[#0d1628] border border-white/8 text-slate-200 placeholder:text-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/30 transition-all"
-            />
-          </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tasks…"
+          className="w-full bg-[#0d1628] border border-white/8 text-slate-300 placeholder:text-slate-700 rounded-lg pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/30 transition-all"
+        />
+        {searchQuery && (
           <button
-            onClick={handleAddTask}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 shrink-0"
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-3 flex items-center text-slate-600 hover:text-slate-400"
           >
-            Add Task
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
-        </div>
+        )}
       </div>
 
       {/* Columns */}
@@ -236,22 +175,9 @@ const Board = () => {
             columnId={id}
             title={title}
             searchQuery={searchQuery}
-            onDeleteColumn={handleDeleteColumn}
-            onRenameColumn={handleRenameColumn}
             onDeleteTask={handleDeleteWithUndo}
           />
         ))}
-
-        {/* Add column */}
-        <button
-          onClick={handleAddColumn}
-          className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 min-h-[120px] text-slate-700 hover:text-slate-500 hover:border-white/20 hover:bg-white/3 transition-all duration-200 text-sm font-medium"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add column
-        </button>
       </div>
 
       {/* Connected Users */}

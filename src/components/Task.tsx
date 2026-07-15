@@ -122,7 +122,7 @@ const Task = ({ task, index, columnId, onDelete }: TaskComponentProps) => {
         ref={cardRef}
         onClick={() => openTask(task.id, columnId)}
         className={[
-          'group relative rounded-xl p-3.5',
+          'group relative rounded-r-xl p-3.5',
           'bg-[#0f1c36] border border-white/6 border-l-2',
           borderClass,
           'cursor-pointer active:cursor-grabbing',
