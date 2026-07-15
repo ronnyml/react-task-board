@@ -10,13 +10,20 @@ const mockUseBoard = useBoard as jest.MockedFunction<typeof useBoard>;
 describe('Column Component', () => {
   const mockStartEditingTask = jest.fn();
   const mockStopEditingTask = jest.fn();
+  const mockOnDeleteColumn = jest.fn();
+  const mockOnRenameColumn = jest.fn();
+  const mockOnDeleteTask = jest.fn();
 
   let props: ColumnProps;
 
   beforeEach(() => {
     props = {
       title: 'To Do',
-      columnId: 'todo'
+      columnId: 'todo',
+      searchQuery: '',
+      onDeleteColumn: mockOnDeleteColumn,
+      onRenameColumn: mockOnRenameColumn,
+      onDeleteTask: mockOnDeleteTask,
     };
 
     mockUseBoard.mockReturnValue({
@@ -31,13 +38,20 @@ describe('Column Component', () => {
       editingUsers: {},
       currentUserId: null,
       updateTasks: jest.fn(),
+      updateTask: jest.fn(),
       connectedUsers: [],
       userNames: {},
       editingTask: null,
       socketConnected: false,
       userName: 'Tester',
       setUserName: jest.fn(),
-      deleteTask: jest.fn()
+      deleteTask: jest.fn(),
+      columns: [{ id: 'todo', title: 'To Do' }],
+      updateColumns: jest.fn(),
+      selectedTaskId: null,
+      selectedTaskColumnId: null,
+      openTask: jest.fn(),
+      closeTask: jest.fn(),
     });
 
     jest.clearAllMocks();
@@ -62,5 +76,20 @@ describe('Column Component', () => {
     const taskElement = screen.getByText('Task 1');
     fireEvent.mouseUp(taskElement);
     expect(mockStopEditingTask).toHaveBeenCalledWith('task-1');
+  });
+
+  it('should filter tasks by search query', () => {
+    render(<Column {...props} searchQuery="Task 1" />);
+    expect(screen.getByText('Task 1')).toBeInTheDocument();
+    expect(screen.queryByText('Task 2')).not.toBeInTheDocument();
+  });
+
+  it('should show delete column button when column is empty', () => {
+    mockUseBoard.mockReturnValue({
+      ...mockUseBoard(),
+      tasks: { 'todo': [] },
+    });
+    render(<Column {...props} />);
+    expect(screen.getByLabelText('Remove column')).toBeInTheDocument();
   });
 });

@@ -7,36 +7,57 @@ import { ColumnProps } from '../interfaces/ColumnProps';
 const COLUMN_CONFIG: Record<string, {
   accent: string;
   badgeClass: string;
-  iconPath: string;
   glowClass: string;
 }> = {
   'todo': {
     accent: '#3b82f6',
     badgeClass: 'bg-blue-500/15 text-blue-400 ring-1 ring-inset ring-blue-500/25',
-    iconPath: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z',
     glowClass: 'ring-blue-500/30',
   },
   'in-progress': {
     accent: '#f59e0b',
     badgeClass: 'bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/25',
-    iconPath: 'M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83',
     glowClass: 'ring-amber-500/30',
   },
   'done': {
     accent: '#10b981',
     badgeClass: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/25',
-    iconPath: 'M20 6L9 17l-5-5',
     glowClass: 'ring-emerald-500/30',
   },
 };
 
-const Column = ({ title, columnId }: ColumnProps) => {
+const FALLBACK_ACCENTS = ['#6366f1', '#ec4899', '#14b8a6', '#f97316', '#a855f7'];
+const getFallbackConfig = (columnId: string) => {
+  const color = FALLBACK_ACCENTS[columnId.charCodeAt(0) % FALLBACK_ACCENTS.length];
+  return { accent: color, badgeClass: 'bg-slate-700/60 text-slate-400 ring-1 ring-inset ring-white/10', glowClass: 'ring-slate-500/30' };
+};
+
+interface ColumnComponentProps extends ColumnProps {
+  searchQuery: string;
+  onDeleteColumn: (columnId: string) => void;
+  onRenameColumn: (columnId: string, title: string) => void;
+  onDeleteTask: (taskId: string) => void;
+}
+
+const Column = ({ title, columnId, searchQuery, onDeleteColumn, onRenameColumn, onDeleteTask }: ColumnComponentProps) => {
   const { tasks, startEditingTask, stopEditingTask } = useBoard();
   const colRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(title);
 
-  const config = COLUMN_CONFIG[columnId];
+  const config = COLUMN_CONFIG[columnId] ?? getFallbackConfig(columnId);
   const columnTasks = tasks[columnId] ?? [];
+
+  const filteredTasks = searchQuery.trim()
+    ? columnTasks.filter((t) =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.description ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : columnTasks;
+
+  const isEmpty = columnTasks.length === 0;
 
   useEffect(() => {
     const el = colRef.current;
@@ -52,49 +73,90 @@ const Column = ({ title, columnId }: ColumnProps) => {
     });
   }, [columnId]);
 
+  useEffect(() => {
+    setTitleDraft(title);
+  }, [title]);
+
+  const startTitleEdit = () => {
+    setIsEditingTitle(true);
+    setTimeout(() => {
+      titleInputRef.current?.select();
+    }, 20);
+  };
+
+  const commitTitleEdit = () => {
+    const trimmed = titleDraft.trim();
+    if (trimmed && trimmed !== title) {
+      onRenameColumn(columnId, trimmed);
+    } else {
+      setTitleDraft(title);
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') commitTitleEdit();
+    if (e.key === 'Escape') { setTitleDraft(title); setIsEditingTitle(false); }
+  };
+
   return (
     <div
       ref={colRef}
       className={[
         'flex flex-col rounded-xl border bg-[#0d1628]/90 backdrop-blur-sm',
-        'transition-all duration-200 min-h-[480px]',
+        'transition-all duration-200 min-h-[420px]',
         isDragOver
-          ? `border-white/20 ring-1 ${config?.glowClass ?? 'ring-slate-500/30'} shadow-lg`
+          ? `border-white/20 ring-1 ${config.glowClass} shadow-lg`
           : 'border-white/8',
       ].join(' ')}
     >
-      {/* Column accent bar */}
+      {/* Accent bar */}
       <div
         className="h-0.5 rounded-t-xl"
-        style={{ background: config?.accent ?? '#64748b' }}
+        style={{ background: config.accent }}
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2.5">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke={config?.accent ?? '#64748b'}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {columnId === 'in-progress' ? (
-              <path d={config?.iconPath} />
-            ) : (
-              <path d={config?.iconPath} />
-            )}
-          </svg>
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            {title}
-          </h2>
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={commitTitleEdit}
+              onKeyDown={handleTitleKey}
+              className="flex-1 min-w-0 bg-white/6 border border-white/15 text-slate-200 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+              autoFocus
+            />
+          ) : (
+            <h2
+              className="text-xs font-semibold uppercase tracking-widest text-slate-400 cursor-pointer hover:text-slate-200 transition-colors truncate"
+              onDoubleClick={startTitleEdit}
+              title="Double-click to rename"
+            >
+              {title}
+            </h2>
+          )}
         </div>
-        <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 tabular-nums ${config?.badgeClass ?? ''}`}>
-          {columnTasks.length}
-        </span>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`text-[11px] font-medium rounded-full px-2 py-0.5 tabular-nums ${config.badgeClass}`}>
+            {columnTasks.length}
+          </span>
+          {isEmpty && (
+            <button
+              onClick={() => onDeleteColumn(columnId)}
+              className="p-0.5 rounded text-slate-700 hover:text-red-400 transition-colors"
+              title="Remove column"
+              aria-label="Remove column"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tasks */}
@@ -109,15 +171,24 @@ const Column = ({ title, columnId }: ColumnProps) => {
             </div>
             <p className="text-xs text-slate-700">Drop tasks here</p>
           </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center py-8">
+            <p className="text-xs text-slate-700">No matches</p>
+          </div>
         ) : (
-          columnTasks.map((task, index) => (
+          filteredTasks.map((task, index) => (
             <div
               key={task.id}
               onMouseEnter={() => startEditingTask(task.id)}
               onMouseLeave={() => stopEditingTask(task.id)}
               onMouseUp={() => stopEditingTask(task.id)}
             >
-              <Task task={task} index={index} columnId={columnId} />
+              <Task
+                task={task}
+                index={index}
+                columnId={columnId}
+                onDelete={() => onDeleteTask(task.id)}
+              />
             </div>
           ))
         )}

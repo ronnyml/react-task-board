@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import Column from './Column';
+import TaskModal from './TaskModal';
 import useBoard from '../hooks/useBoard';
 import { TasksState } from '../interfaces/TasksState';
+import { Task } from '../interfaces/Task';
 
 type Edge = 'top' | 'bottom';
 
@@ -14,15 +16,24 @@ const USER_COLORS = [
 const getUserColor = (userId: string) =>
   USER_COLORS[userId.charCodeAt(0) % USER_COLORS.length];
 
-const COLUMNS = [
-  { columnId: 'todo', title: 'To Do' },
-  { columnId: 'in-progress', title: 'In Progress' },
-  { columnId: 'done', title: 'Done' },
-];
+interface UndoState {
+  task: Task;
+  columnId: string;
+  index: number;
+}
 
 const Board = () => {
-  const { tasks, updateTasks, connectedUsers, currentUserId, socketConnected, userName, setUserName } = useBoard();
+  const {
+    tasks, updateTasks, deleteTask,
+    columns, updateColumns,
+    connectedUsers, currentUserId, socketConnected, userName, setUserName,
+    selectedTaskId,
+  } = useBoard();
+
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [undoState, setUndoState] = useState<UndoState | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tasksRef = useRef<TasksState>(tasks);
   tasksRef.current = tasks;
@@ -102,10 +113,11 @@ const Board = () => {
 
   const handleAddTask = () => {
     const title = newTaskTitle.trim();
-    if (!title) return;
-    const newTask = { id: `task-${Date.now()}`, title };
+    if (!title || columns.length === 0) return;
+    const firstColumnId = columns[0].id;
+    const newTask: Task = { id: `task-${Date.now()}`, title };
     const updatedTasks = { ...tasks };
-    updatedTasks['todo'] = [newTask, ...updatedTasks['todo']];
+    updatedTasks[firstColumnId] = [newTask, ...(updatedTasks[firstColumnId] ?? [])];
     updateTasks(updatedTasks);
     setNewTaskTitle('');
   };
@@ -114,39 +126,132 @@ const Board = () => {
     if (e.key === 'Enter') handleAddTask();
   };
 
+  const handleDeleteWithUndo = useCallback((taskId: string) => {
+    let found: UndoState | null = null;
+    for (const colId in tasks) {
+      const idx = tasks[colId].findIndex((t) => t.id === taskId);
+      if (idx !== -1) {
+        found = { task: tasks[colId][idx], columnId: colId, index: idx };
+        break;
+      }
+    }
+    if (!found) return;
+
+    deleteTask(taskId);
+    setUndoState(found);
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => setUndoState(null), 5000);
+  }, [tasks, deleteTask]);
+
+  const handleUndo = () => {
+    if (!undoState) return;
+    const newTasks = { ...tasks };
+    const col = [...(newTasks[undoState.columnId] ?? [])];
+    col.splice(undoState.index, 0, undoState.task);
+    newTasks[undoState.columnId] = col;
+    updateTasks(newTasks);
+    setUndoState(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  };
+
+  const handleAddColumn = () => {
+    const id = `col-${Date.now()}`;
+    updateColumns([...columns, { id, title: 'New Column' }]);
+    updateTasks({ ...tasks, [id]: [] });
+  };
+
+  const handleDeleteColumn = (columnId: string) => {
+    updateColumns(columns.filter((c) => c.id !== columnId));
+    const newTasks = { ...tasks };
+    delete newTasks[columnId];
+    updateTasks(newTasks);
+  };
+
+  const handleRenameColumn = (columnId: string, title: string) => {
+    updateColumns(columns.map((c) => c.id === columnId ? { ...c, title } : c));
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Add task */}
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
+    <div className="flex flex-col gap-5">
+      {/* Toolbar: search + add task */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
           <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </div>
           <input
             type="text"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="New task title…"
-            className="w-full bg-[#0d1628] border border-white/10 text-slate-200 placeholder:text-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search tasks…"
+            className="w-full bg-[#0d1628] border border-white/8 text-slate-300 placeholder:text-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/30 transition-all"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-3 flex items-center text-slate-600 hover:text-slate-400"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
-        <button
-          onClick={handleAddTask}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 shrink-0"
-        >
-          Add Task
-        </button>
+
+        {/* Add task */}
+        <div className="flex gap-2 sm:w-auto">
+          <div className="relative flex-1 sm:flex-none sm:w-56">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-600">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="New task title…"
+              className="w-full bg-[#0d1628] border border-white/8 text-slate-200 placeholder:text-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/40 focus:border-blue-500/30 transition-all"
+            />
+          </div>
+          <button
+            onClick={handleAddTask}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 shrink-0"
+          >
+            Add Task
+          </button>
+        </div>
       </div>
 
       {/* Columns */}
-      <div className="grid grid-cols-3 gap-4">
-        {COLUMNS.map(({ columnId, title }) => (
-          <Column key={columnId} columnId={columnId} title={title} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {columns.map(({ id, title }) => (
+          <Column
+            key={id}
+            columnId={id}
+            title={title}
+            searchQuery={searchQuery}
+            onDeleteColumn={handleDeleteColumn}
+            onRenameColumn={handleRenameColumn}
+            onDeleteTask={handleDeleteWithUndo}
+          />
         ))}
+
+        {/* Add column */}
+        <button
+          onClick={handleAddColumn}
+          className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 min-h-[120px] text-slate-700 hover:text-slate-500 hover:border-white/20 hover:bg-white/3 transition-all duration-200 text-sm font-medium"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add column
+        </button>
       </div>
 
       {/* Connected Users */}
@@ -164,7 +269,7 @@ const Board = () => {
               {connectedUsers.map((user) => {
                 const isYou = user.id === currentUserId;
                 return (
-                  <div key={user.id} className="flex items-center gap-1.5 group relative">
+                  <div key={user.id} className="flex items-center gap-1.5">
                     <div
                       className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                       style={{
@@ -183,7 +288,6 @@ const Board = () => {
               })}
             </div>
             <div className="w-px h-4 bg-white/8 shrink-0" />
-            {/* Name change */}
             <button
               onClick={() => {
                 const newName = window.prompt('Change your name:', userName);
@@ -199,11 +303,41 @@ const Board = () => {
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
             <span className="text-xs text-slate-600 font-medium">
-              Not connected — run <code className="text-slate-500 bg-white/5 px-1 rounded">npm run server</code>
+              Not connected — run <code className="text-slate-500 bg-white/5 px-1 rounded">npm run dev</code>
             </span>
           </div>
         )}
       </div>
+
+      {/* Task modal */}
+      {selectedTaskId && <TaskModal />}
+
+      {/* Undo toast */}
+      {undoState && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-[#1a2744] border border-white/12 rounded-xl px-4 py-3 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 shrink-0">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+          </svg>
+          <span className="text-xs text-slate-400">
+            <span className="text-slate-300 font-medium">"{undoState.task.title}"</span> deleted
+          </span>
+          <button
+            onClick={handleUndo}
+            className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors ml-1"
+          >
+            Undo
+          </button>
+          <button
+            onClick={() => setUndoState(null)}
+            className="text-slate-600 hover:text-slate-400 transition-colors ml-1"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

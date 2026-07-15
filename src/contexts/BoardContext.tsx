@@ -4,7 +4,15 @@ import { BoardContextProps } from '../interfaces/BoardContextProps';
 import { BoardProviderProps } from '../interfaces/BoardProviderProps';
 import { TasksState } from '../interfaces/TasksState';
 import { ConnectedUser } from '../interfaces/ConnectedUser';
+import { ColumnDef } from '../interfaces/ColumnDef';
+import { Task } from '../interfaces/Task';
 import { config } from '../config/config';
+
+const DEFAULT_COLUMNS: ColumnDef[] = [
+  { id: 'todo', title: 'To Do' },
+  { id: 'in-progress', title: 'In Progress' },
+  { id: 'done', title: 'Done' },
+];
 
 const BoardContext = createContext<BoardContextProps | undefined>(undefined);
 
@@ -18,6 +26,7 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     'in-progress': [],
     'done': []
   });
+  const [columns, setColumns] = useState<ColumnDef[]>(DEFAULT_COLUMNS);
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingUsers, setEditingUsers] = useState<{ [key: string]: string | null }>({});
@@ -26,6 +35,8 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   const [userName, setUserNameState] = useState<string>(
     () => localStorage.getItem(LS_KEY) ?? ''
   );
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskColumnId, setSelectedTaskColumnId] = useState<string | null>(null);
 
   const userNames = useMemo(
     () => Object.fromEntries(connectedUsers.map((u) => [u.id, u.name])),
@@ -62,6 +73,10 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
       if (!ignore) setTasks(updatedTasks);
     });
 
+    socket.on('columns-update', (updatedColumns: ColumnDef[]) => {
+      if (!ignore) setColumns(updatedColumns);
+    });
+
     socket.on('user-joined', (users: ConnectedUser[]) => {
       if (!ignore) setConnectedUsers(users);
     });
@@ -91,6 +106,24 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     if (socket) socket.emit('tasks-update', newTasks);
   };
 
+  const updateTask = (taskId: string, updates: Partial<Task>) => {
+    const newTasks = { ...tasks };
+    for (const columnId in newTasks) {
+      const idx = newTasks[columnId].findIndex((t) => t.id === taskId);
+      if (idx !== -1) {
+        newTasks[columnId] = [...newTasks[columnId]];
+        newTasks[columnId][idx] = { ...newTasks[columnId][idx], ...updates };
+        break;
+      }
+    }
+    updateTasks(newTasks);
+  };
+
+  const updateColumns = (newColumns: ColumnDef[]) => {
+    setColumns(newColumns);
+    if (socket) socket.emit('columns-update', newColumns);
+  };
+
   const startEditingTask = (taskId: string) => {
     setEditingTask(taskId);
     if (socket && currentUserId) {
@@ -118,6 +151,16 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     updateTasks(updatedTasks);
   };
 
+  const openTask = (taskId: string, columnId: string) => {
+    setSelectedTaskId(taskId);
+    setSelectedTaskColumnId(columnId);
+  };
+
+  const closeTask = () => {
+    setSelectedTaskId(null);
+    setSelectedTaskColumnId(null);
+  };
+
   const contextValues: BoardContextProps = {
     currentUserId,
     connectedUsers,
@@ -129,9 +172,16 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     userName,
     setUserName,
     updateTasks,
+    updateTask,
     startEditingTask,
     stopEditingTask,
     deleteTask,
+    columns,
+    updateColumns,
+    selectedTaskId,
+    selectedTaskColumnId,
+    openTask,
+    closeTask,
   };
 
   return (

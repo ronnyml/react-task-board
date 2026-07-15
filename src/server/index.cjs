@@ -17,7 +17,13 @@ let tasks = {
   'done': []
 };
 
-let connectedUsers = []; // { id: string, name: string }[]
+let columns = [
+  { id: 'todo', title: 'To Do' },
+  { id: 'in-progress', title: 'In Progress' },
+  { id: 'done', title: 'Done' },
+];
+
+let connectedUsers = [];
 let editingUsers = {};
 
 io.on('connection', (socket) => {
@@ -27,6 +33,7 @@ io.on('connection', (socket) => {
 
   console.log('a user connected: ' + shortId);
   socket.emit('tasks-update', tasks);
+  socket.emit('columns-update', columns);
 
   socket.on('set-name', (name) => {
     const user = connectedUsers.find((u) => u.id === shortId);
@@ -39,6 +46,11 @@ io.on('connection', (socket) => {
   socket.on('tasks-update', (updatedTasks) => {
     tasks = updatedTasks;
     socket.broadcast.emit('tasks-update', tasks);
+  });
+
+  socket.on('columns-update', (updatedColumns) => {
+    columns = updatedColumns;
+    socket.broadcast.emit('columns-update', columns);
   });
 
   socket.on('task-editing', (updatedEditingUsers) => {

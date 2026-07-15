@@ -19,6 +19,7 @@ describe('Board Component', () => {
         'done': []
       },
       updateTasks: jest.fn(),
+      updateTask: jest.fn(),
       connectedUsers: [],
       userNames: {},
       currentUserId: null,
@@ -29,7 +30,17 @@ describe('Board Component', () => {
       setUserName: jest.fn(),
       startEditingTask: jest.fn(),
       stopEditingTask: jest.fn(),
-      deleteTask: jest.fn()
+      deleteTask: jest.fn(),
+      columns: [
+        { id: 'todo', title: 'To Do' },
+        { id: 'in-progress', title: 'In Progress' },
+        { id: 'done', title: 'Done' },
+      ],
+      updateColumns: jest.fn(),
+      selectedTaskId: null,
+      selectedTaskColumnId: null,
+      openTask: jest.fn(),
+      closeTask: jest.fn(),
     };
 
     mockUseBoard.mockReturnValue(contextValue);

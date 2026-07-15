@@ -9,8 +9,10 @@ const mockUseBoard = useBoard as jest.MockedFunction<typeof useBoard>;
 
 describe('Task Component', () => {
   const mockDeleteTask = jest.fn();
+  const mockOnDelete = jest.fn();
   const mockStartEditingTask = jest.fn();
   const mockStopEditingTask = jest.fn();
+  const mockOpenTask = jest.fn();
   let props: TaskProps;
   let mockUseBoardReturnValue: ReturnType<typeof useBoard>;
 
@@ -18,7 +20,8 @@ describe('Task Component', () => {
     props = {
       task: { id: 'task-1', title: 'Task 1' },
       index: 0,
-      columnId: 'todo'
+      columnId: 'todo',
+      onDelete: mockOnDelete,
     };
 
     mockUseBoardReturnValue = {
@@ -27,6 +30,7 @@ describe('Task Component', () => {
       deleteTask: mockDeleteTask,
       tasks: {},
       updateTasks: jest.fn(),
+      updateTask: jest.fn(),
       connectedUsers: [],
       userNames: {},
       startEditingTask: mockStartEditingTask,
@@ -34,38 +38,38 @@ describe('Task Component', () => {
       editingTask: null,
       socketConnected: false,
       userName: 'Tester',
-      setUserName: jest.fn()
+      setUserName: jest.fn(),
+      columns: [{ id: 'todo', title: 'To Do' }],
+      updateColumns: jest.fn(),
+      selectedTaskId: null,
+      selectedTaskColumnId: null,
+      openTask: mockOpenTask,
+      closeTask: jest.fn(),
     };
 
     mockUseBoard.mockReturnValue(mockUseBoardReturnValue);
     jest.clearAllMocks();
   });
 
-  it('should call deleteTask when the delete button is clicked and user confirms', () => {
-    window.confirm = jest.fn(() => true);
+  it('should call onDelete when the delete button is clicked', () => {
     render(<Task {...props} />);
 
     const deleteButton = screen.getByLabelText('Delete task');
     fireEvent.click(deleteButton);
 
-    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this task?');
-    expect(mockDeleteTask).toHaveBeenCalledWith('task-1');
-  });
-
-  it('should not call deleteTask when the delete button is clicked and user cancels', () => {
-    window.confirm = jest.fn(() => false);
-    render(<Task {...props} />);
-
-    const deleteButton = screen.getByLabelText('Delete task');
-    fireEvent.click(deleteButton);
-
-    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete this task?');
-    expect(mockDeleteTask).not.toHaveBeenCalled();
+    expect(mockOnDelete).toHaveBeenCalled();
   });
 
   it('should render the task with the title', () => {
     render(<Task {...props} />);
     expect(screen.getByText('Task 1')).toBeInTheDocument();
+  });
+
+  it('should open task modal when card is clicked', () => {
+    render(<Task {...props} />);
+    const card = screen.getByText('Task 1').closest('[class*="rounded-xl"]') as HTMLElement;
+    fireEvent.click(card);
+    expect(mockOpenTask).toHaveBeenCalledWith('task-1', 'todo');
   });
 
   it('should show editing indicator with resolved name when another user is editing', () => {
@@ -92,5 +96,11 @@ describe('Task Component', () => {
 
     render(<Task {...props} />);
     expect(screen.queryByText('user-1 is viewing…')).not.toBeInTheDocument();
+  });
+
+  it('should show description when task has one', () => {
+    props.task = { ...props.task, description: 'Some description text' };
+    render(<Task {...props} />);
+    expect(screen.getByText('Some description text')).toBeInTheDocument();
   });
 });
