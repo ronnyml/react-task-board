@@ -3,6 +3,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import Column from './Column';
 import TaskModal from './TaskModal';
+import ConfirmDialog from './ConfirmDialog';
 import useBoard from '../hooks/useBoard';
 import { TasksState } from '../interfaces/TasksState';
 import { Task } from '../interfaces/Task';
@@ -27,11 +28,12 @@ const Board = () => {
     tasks, updateTasks, deleteTask,
     columns,
     connectedUsers, currentUserId, socketConnected, userName, setUserName,
-    selectedTaskId,
+    selectedTaskId, closeTask,
   } = useBoard();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [undoState, setUndoState] = useState<UndoState | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tasksRef = useRef<TasksState>(tasks);
@@ -139,6 +141,20 @@ const Board = () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
+  const requestDelete = useCallback((taskId: string) => {
+    setPendingDeleteId(taskId);
+  }, []);
+
+  const confirmDelete = () => {
+    if (!pendingDeleteId) return;
+    if (selectedTaskId === pendingDeleteId) closeTask();
+    handleDeleteWithUndo(pendingDeleteId);
+    setPendingDeleteId(null);
+  };
+
+  const cancelDelete = () => setPendingDeleteId(null);
+
+
   return (
     <div className="flex flex-col gap-5">
       {/* Search bar */}
@@ -175,7 +191,7 @@ const Board = () => {
             columnId={id}
             title={title}
             searchQuery={searchQuery}
-            onDeleteTask={handleDeleteWithUndo}
+            onDeleteTask={requestDelete}
           />
         ))}
       </div>
@@ -236,7 +252,15 @@ const Board = () => {
       </div>
 
       {/* Task modal */}
-      {selectedTaskId && <TaskModal onDelete={handleDeleteWithUndo} />}
+      {selectedTaskId && <TaskModal onDelete={requestDelete} />}
+
+      {/* Confirm delete dialog */}
+      {pendingDeleteId && (
+        <ConfirmDialog
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+        />
+      )}
 
       {/* Undo toast */}
       {undoState && (
