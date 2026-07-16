@@ -28,7 +28,6 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   });
   const [columns, setColumns] = useState<ColumnDef[]>(DEFAULT_COLUMNS);
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
-  const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingUsers, setEditingUsers] = useState<{ [key: string]: string | null }>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
@@ -125,7 +124,6 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   const startEditingTask = (taskId: string) => {
-    setEditingTask(taskId);
     if (socket && currentUserId) {
       const updated = { ...editingUsers, [taskId]: currentUserId };
       setEditingUsers(updated);
@@ -134,7 +132,6 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   const stopEditingTask = (taskId: string) => {
-    setEditingTask(null);
     if (socket && currentUserId) {
       const updated = { ...editingUsers };
       if (updated[taskId] === currentUserId) delete updated[taskId];
@@ -167,7 +164,6 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     userNames,
     editingUsers,
     tasks,
-    editingTask,
     socketConnected,
     userName,
     setUserName,

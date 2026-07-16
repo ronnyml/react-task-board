@@ -38,7 +38,6 @@ describe('Column Component', () => {
       updateTask: jest.fn(),
       connectedUsers: [],
       userNames: {},
-      editingTask: null,
       socketConnected: false,
       userName: 'Tester',
       setUserName: jest.fn(),

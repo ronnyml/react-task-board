@@ -35,7 +35,6 @@ describe('Task Component', () => {
       userNames: {},
       startEditingTask: mockStartEditingTask,
       stopEditingTask: mockStopEditingTask,
-      editingTask: null,
       socketConnected: false,
       userName: 'Tester',
       setUserName: jest.fn(),

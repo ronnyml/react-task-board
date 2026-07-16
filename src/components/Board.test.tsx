@@ -24,7 +24,6 @@ describe('Board Component', () => {
       userNames: {},
       currentUserId: null,
       editingUsers: {},
-      editingTask: null,
       socketConnected: false,
       userName: 'Tester',
       setUserName: jest.fn(),

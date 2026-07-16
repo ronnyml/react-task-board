@@ -9,7 +9,6 @@ export interface BoardContextProps {
   editingUsers: { [key: string]: string | null };
   currentUserId: string | null;
   userName: string;
-  editingTask: string | null;
   socketConnected: boolean;
   setUserName: (name: string) => void;
   startEditingTask: (taskId: string) => void;

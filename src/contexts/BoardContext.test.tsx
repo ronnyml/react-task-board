@@ -62,7 +62,6 @@ describe('BoardContext - Tasks', () => {
       }
     });
 
-    expect(contextValue?.editingTask).toBe('test-task-id');
     expect(mockSocket.emit).toHaveBeenCalledWith('task-editing', {
       'test-task-id': 'mock-'
     });
