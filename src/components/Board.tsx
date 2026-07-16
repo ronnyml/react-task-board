@@ -32,7 +32,7 @@ const Board = () => {
   } = useBoard();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [undoState, setUndoState] = useState<UndoState | null>(null);
+  const [undoQueue, setUndoQueue] = useState<UndoState[]>([]);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -124,30 +124,34 @@ const Board = () => {
     if (!found) return;
 
     deleteTask(taskId);
-    setUndoState(found);
+    setUndoQueue(prev => [...prev, found!]);
 
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => setUndoState(null), 5000);
+    undoTimerRef.current = setTimeout(() => setUndoQueue([]), 5000);
   }, [tasks, deleteTask]);
 
   const handleUndo = () => {
-    if (!undoState) return;
-    const newTasks = { ...tasks };
-    const col = [...(newTasks[undoState.columnId] ?? [])];
-    col.splice(undoState.index, 0, undoState.task);
-    newTasks[undoState.columnId] = col;
+    if (!undoQueue.length) return;
+    const latest = undoQueue[undoQueue.length - 1];
+    const newTasks = { ...tasksRef.current };
+    const col = [...(newTasks[latest.columnId] ?? [])];
+    col.splice(latest.index, 0, latest.task);
+    newTasks[latest.columnId] = col;
     updateTasks(newTasks);
-    setUndoState(null);
+    setUndoQueue(prev => prev.slice(0, -1));
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoQueue.length > 1) {
+      undoTimerRef.current = setTimeout(() => setUndoQueue([]), 5000);
+    }
   };
 
   const requestDelete = useCallback((taskId: string) => {
+    if (selectedTaskId === taskId) closeTask();
     setPendingDeleteId(taskId);
-  }, []);
+  }, [selectedTaskId, closeTask]);
 
   const confirmDelete = () => {
     if (!pendingDeleteId) return;
-    if (selectedTaskId === pendingDeleteId) closeTask();
     handleDeleteWithUndo(pendingDeleteId);
     setPendingDeleteId(null);
   };
@@ -263,14 +267,15 @@ const Board = () => {
       )}
 
       {/* Undo toast */}
-      {undoState && (
+      {undoQueue.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-[#1a2744] border border-white/12 rounded-xl px-4 py-3 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 shrink-0">
             <polyline points="3 6 5 6 21 6" />
             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
           </svg>
           <span className="text-xs text-slate-400">
-            <span className="text-slate-300 font-medium">"{undoState.task.title}"</span> deleted
+            <span className="text-slate-300 font-medium">"{undoQueue[undoQueue.length - 1].task.title}"</span> deleted
+            {undoQueue.length > 1 && <span className="text-slate-600 ml-1">+{undoQueue.length - 1} more</span>}
           </span>
           <button
             onClick={handleUndo}
@@ -279,7 +284,7 @@ const Board = () => {
             Undo
           </button>
           <button
-            onClick={() => setUndoState(null)}
+            onClick={() => { setUndoQueue([]); if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }}
             className="text-slate-600 hover:text-slate-400 transition-colors ml-1"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
