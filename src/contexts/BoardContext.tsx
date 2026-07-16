@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, createContext } from 'react';
+import { useState, useEffect, useMemo, useRef, createContext } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { BoardContextProps } from '../interfaces/BoardContextProps';
 import { BoardProviderProps } from '../interfaces/BoardProviderProps';
@@ -29,6 +29,7 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   const [columns, setColumns] = useState<ColumnDef[]>(DEFAULT_COLUMNS);
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const [editingUsers, setEditingUsers] = useState<{ [key: string]: string | null }>({});
+  const editingUsersRef = useRef<{ [key: string]: string | null }>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const [userName, setUserNameState] = useState<string>(
@@ -85,7 +86,10 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
     });
 
     socket.on('task-editing', (updatedEditingUsers: { [key: string]: string }) => {
-      if (!ignore) setEditingUsers(updatedEditingUsers);
+      if (!ignore) {
+        editingUsersRef.current = updatedEditingUsers;
+        setEditingUsers(updatedEditingUsers);
+      }
     });
 
     return () => {
@@ -124,21 +128,50 @@ export const BoardProvider = ({ children }: BoardProviderProps) => {
   };
 
   const startEditingTask = (taskId: string) => {
-    if (socket && currentUserId) {
-      const updated = { ...editingUsers, [taskId]: currentUserId };
-      setEditingUsers(updated);
-      socket.emit('task-editing', updated);
-    }
+    if (!socket || !currentUserId) return;
+    // Remove any prior entry for this user, then set the new one — avoids stale multi-task indicators
+    const without = Object.fromEntries(
+      Object.entries(editingUsersRef.current).filter(([, uid]) => uid !== currentUserId)
+    );
+    const updated = { ...without, [taskId]: currentUserId };
+    editingUsersRef.current = updated;
+    setEditingUsers(updated);
+    socket.emit('task-editing', updated);
   };
 
   const stopEditingTask = (taskId: string) => {
-    if (socket && currentUserId) {
-      const updated = { ...editingUsers };
-      if (updated[taskId] === currentUserId) delete updated[taskId];
-      setEditingUsers(updated);
-      socket.emit('task-editing', updated);
-    }
+    if (!socket || !currentUserId) return;
+    if (editingUsersRef.current[taskId] !== currentUserId) return;
+    const updated = { ...editingUsersRef.current };
+    delete updated[taskId];
+    editingUsersRef.current = updated;
+    setEditingUsers(updated);
+    socket.emit('task-editing', updated);
   };
+
+  // Clear this user's viewing state when the cursor leaves the browser or the tab is hidden
+  useEffect(() => {
+    const clearMyEdits = () => {
+      if (!currentUserId) return;
+      const hasAny = Object.values(editingUsersRef.current).some(uid => uid === currentUserId);
+      if (!hasAny) return;
+      const updated = Object.fromEntries(
+        Object.entries(editingUsersRef.current).filter(([, uid]) => uid !== currentUserId)
+      );
+      editingUsersRef.current = updated;
+      setEditingUsers(updated);
+      socket?.emit('task-editing', updated);
+    };
+
+    const onVisibilityChange = () => { if (document.hidden) clearMyEdits(); };
+
+    document.addEventListener('mouseleave', clearMyEdits);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      document.removeEventListener('mouseleave', clearMyEdits);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [currentUserId]);
 
   const deleteTask = (taskId: string) => {
     const updatedTasks = { ...tasks };
