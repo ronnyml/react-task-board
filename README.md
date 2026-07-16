@@ -1,6 +1,6 @@
 # Collaborative Task Board
 
-A real-time collaborative task board where multiple users can manage tasks together — drag tasks between columns, see live presence of teammates, and watch changes appear instantly across every connected browser.
+A real-time collaborative Kanban board where multiple users can manage tasks together — drag tasks between columns, see live presence of teammates, and watch changes appear instantly across every connected browser.
 
 ## Live Demo
 
@@ -10,18 +10,21 @@ A real-time collaborative task board where multiple users can manage tasks toget
 
 ![Collaborative Task Board](docs/screenshot.png)
 
-*Two users (Alice and Bob) collaborating in real time — tasks spread across To Do, In Progress, and Done columns, with live presence shown at the bottom.*
+*Tasks spread across To Do, In Progress, and Done columns with live presence shown at the bottom.*
 
 ## Features
 
-- **Named user presence** — enter your name when you join; teammates see your name (not a random ID) in the connected users panel
+- **Named user presence** — enter your name when you join; teammates see your name in the connected users panel
 - **Real-time sync** — every task add, move, or delete is broadcast instantly to all connected browsers via Socket.io
 - **Drag-and-drop** — powered by [@atlaskit/pragmatic-drag-and-drop](https://atlassian.design/components/pragmatic-drag-and-drop), with precise closest-edge drop indicators for intra-column reordering
-- **Live editing awareness** — hovering a task shows other users' names, so teammates know when you're looking at a card
-- **Task management** — add tasks via input (Enter or button), delete with confirmation
+- **Live editing awareness** — hovering a task broadcasts your presence so teammates see who's looking at a card
+- **Per-column task creation** — each column has an inline "+ Add a task…" input at the bottom; press Enter to add instantly
+- **Task details modal** — click any task card to open a modal and edit its title, description, assignee, and due date
+- **Search** — compact search bar filters tasks across all columns in real time
+- **Undo delete** — deleting a task (from the card or the modal) shows a 5-second undo toast so accidental deletes are recoverable
 - **Rename yourself** — change your display name at any time with the ✎ rename button
 - **Connection status** — green pulse when live, red indicator when the server is unreachable
-- **Dark professional UI** — glassmorphic columns, accent-colored task borders per column, smooth transitions
+- **Dark professional UI** — column accent bars, straight left border on task cards, smooth transitions
 
 ## Tech Stack
 
@@ -43,7 +46,7 @@ npm install
 npm run dev
 ```
 
-That's it — `npm run dev` starts both the Vite frontend and the Socket.io server together. Open `http://localhost:5173` (or whichever port Vite picks) in multiple browser tabs to see real-time collaboration.
+`npm run dev` starts both the Vite frontend and the Socket.io server together. Open `http://localhost:5173` in multiple browser tabs to see real-time collaboration.
 
 The socket server runs on port **3001**. If you need a different URL, set `VITE_SERVER_URL` in a `.env` file:
 
@@ -63,7 +66,7 @@ Unit tests cover all components and the board context using Jest and React Testi
 
 ```
 src/
-  components/     UI components (Board, Column, Task, Header, NamePrompt)
+  components/     UI components (Board, Column, Task, TaskModal, Header, NamePrompt)
   contexts/       BoardContext — global state, socket lifecycle, user presence
   hooks/          useBoard — typed context consumer
   interfaces/     TypeScript interfaces
@@ -79,3 +82,4 @@ src/
 - **Stale closure prevention** — Board's `monitorForElements` callback reads tasks through a ref (`tasksRef`) so it always sees current state without needing to re-register the monitor
 - **Closest-edge ordering** — `@atlaskit/pragmatic-drag-and-drop-hitbox` computes whether a drag target's top or bottom half is nearest, enabling precise intra-column reordering
 - **User names** persist in `localStorage` (`taskboard-username`) and are sent to the server on reconnect so names survive a page refresh
+- **Undo system** — Board tracks the last deleted task (id, column, index) in local state with a 5-second timer; undo splices the task back at its original position
