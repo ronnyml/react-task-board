@@ -21,7 +21,8 @@ A real-time collaborative Kanban board where multiple users can manage tasks tog
 - **Per-column task creation** — each column has an inline "+ Add a task…" input at the bottom; press Enter to add instantly
 - **Task details modal** — click any task card to open a modal and edit its title, description, assignee, and due date
 - **Search** — compact search bar filters tasks across all columns in real time
-- **Undo delete** — deleting a task (from the card or the modal) shows a 5-second undo toast so accidental deletes are recoverable
+- **Confirmation dialog** — a compact inline dialog asks "Delete task?" before removing a card, preventing accidental deletes
+- **Undo delete** — after confirming, a 5-second undo toast lets you recover the task immediately
 - **Rename yourself** — change your display name at any time with the ✎ rename button
 - **Connection status** — green pulse when live, red indicator when the server is unreachable
 - **Dark professional UI** — column accent bars, straight left border on task cards, smooth transitions
