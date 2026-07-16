@@ -14,7 +14,11 @@ const COLUMN_ACCENT: Record<string, string> = {
   'done': '#10b981',
 };
 
-const TaskModal = () => {
+interface TaskModalProps {
+  onDelete: (taskId: string) => void;
+}
+
+const TaskModal = ({ onDelete }: TaskModalProps) => {
   const {
     tasks,
     columns,
@@ -22,7 +26,6 @@ const TaskModal = () => {
     selectedTaskId,
     selectedTaskColumnId,
     updateTask,
-    deleteTask,
     closeTask,
   } = useBoard();
 
@@ -80,7 +83,7 @@ const TaskModal = () => {
 
   const handleDelete = () => {
     closeTask();
-    deleteTask(task.id);
+    onDelete(task.id);
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {

@@ -236,7 +236,7 @@ const Board = () => {
       </div>
 
       {/* Task modal */}
-      {selectedTaskId && <TaskModal />}
+      {selectedTaskId && <TaskModal onDelete={handleDeleteWithUndo} />}
 
       {/* Undo toast */}
       {undoState && (
